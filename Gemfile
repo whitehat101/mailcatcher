@@ -2,8 +2,6 @@ source "https://rubygems.org"
 
 gemspec
 
-# gem "eventmachine", path: "#{ENV["HOME"]}/Projects/eventmachine"
-
-#group :development do
-#  gem "pry"
-#end
+if ENV.has_key? "EVENTMACHINE"
+  gem "eventmachine", ENV["EVENTMACHINE"]
+end

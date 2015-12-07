@@ -1,6 +1,28 @@
 language: ruby
+sudo: false
 rvm:
   - 1.9.3
-  - 2.0.0
-  - 2.1.5
-  - 2.2.0
+  - 2.0
+  - 2.1
+  - 2.2
+env:
+  - EVENTMACHINE=1.0.0
+  - EVENTMACHINE=1.0.1
+  - EVENTMACHINE=1.0.2
+  - EVENTMACHINE=1.0.3
+  - EVENTMACHINE=1.0.4
+  - EVENTMACHINE=1.0.5
+  - EVENTMACHINE=1.0.6
+  - EVENTMACHINE=1.0.7
+  - EVENTMACHINE=1.0.8
+matrix:
+  exclude:
+    - rvm: 2.2
+      env: EVENTMACHINE=1.0.0
+    - rvm: 2.2
+      env: EVENTMACHINE=1.0.1
+    - rvm: 2.2
+      env: EVENTMACHINE=1.0.2
+    - rvm: 2.2
+      env: EVENTMACHINE=1.0.3
+

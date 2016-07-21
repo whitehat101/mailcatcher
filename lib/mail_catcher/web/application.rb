@@ -3,14 +3,8 @@ require "net/http"
 require "uri"
 
 require "sinatra"
-require "skinny"
 
-require "mail_catcher/events"
 require "mail_catcher/mail"
-
-class Sinatra::Request
-  include Skinny::Helpers
-end
 
 module MailCatcher
   module Web
@@ -18,32 +12,13 @@ module MailCatcher
       set :development, ENV["MAILCATCHER_ENV"] == "development"
       set :root, File.expand_path("#{__FILE__}/../../../..")
 
-      if development?
-        require "sprockets-helpers"
-
-        configure do
-          require "mail_catcher/web/assets"
-          Sprockets::Helpers.configure do |config|
-            config.environment = Assets
-            config.prefix      = "/assets"
-            config.digest      = false
-            config.public_path = public_folder
-            config.debug       = true
-          end
+      helpers do
+        def javascript_tag(name)
+          %{<script src="/assets/#{name}.js"></script>}
         end
 
-        helpers do
-          include Sprockets::Helpers
-        end
-      else
-        helpers do
-          def javascript_tag(name)
-            %{<script src="/assets/#{name}.js"></script>}
-          end
-
-          def stylesheet_tag(name)
-            %{<link rel="stylesheet" href="/assets/#{name}.css">}
-          end
+        def stylesheet_tag(name)
+          %{<link rel="stylesheet" href="/assets/#{name}.css">}
         end
       end
 
@@ -61,18 +36,8 @@ module MailCatcher
       end
 
       get "/messages" do
-        if request.websocket?
-          request.websocket!(
-            :on_start => proc do |websocket|
-              subscription = Events::MessageAdded.subscribe { |message| websocket.send_message(JSON.generate(message)) }
-              websocket.on_close do |websocket|
-                Events::MessageAdded.unsubscribe subscription
-              end
-            end)
-        else
-          content_type :json
-          JSON.generate(Mail.messages)
-        end
+        content_type :json
+        JSON.generate(Mail.messages)
       end
 
       delete "/messages" do

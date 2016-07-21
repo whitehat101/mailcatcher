@@ -1,32 +1,10 @@
-# Apparently rubygems won't activate these on its own, so here we go. Let's
-# repeat the invention of Bundler all over again.
-gem "eventmachine", "1.0.9.1"
-gem "mail", "~> 2.3"
-gem "rack", "~> 1.5"
-gem "sinatra", "~> 1.2"
-gem "sqlite3", "~> 1.3"
-gem "thin", "~> 1.5.0"
-gem "skinny", "~> 0.2.3"
-
+require "logger"
 require "open3"
 require "optparse"
 require "rbconfig"
 
-require "eventmachine"
-require "thin"
-
-module EventMachine
-  # Monkey patch fix for 10deb4
-  # See https://github.com/eventmachine/eventmachine/issues/569
-  def self.reactor_running?
-    (@reactor_running || false)
-  end
-end
-
-require "mail_catcher/events"
-require "mail_catcher/mail"
 require "mail_catcher/smtp"
-require "mail_catcher/web"
+require "mail_catcher/http"
 require "mail_catcher/version"
 
 module MailCatcher extend self
@@ -140,6 +118,12 @@ module MailCatcher extend self
     end
   end
 
+  def logger
+    @logger ||= Logger.new(STDOUT).tap do |logger|
+      logger.level = Logger::INFO
+    end
+  end
+
   def run! options=nil
     # If we are passed options, fill in the blanks
     options &&= options.reverse_merge @@defaults
@@ -156,46 +140,56 @@ module MailCatcher extend self
 
     puts "Starting MailCatcher"
 
-    Thin::Logging.silent = (ENV["MAILCATCHER_ENV"] != "development")
+    # Start up an SMTP server
+    @smtp_server = MailCatcher::SMTP.new(host: options[:smtp_ip], port: options[:smtp_port], logger: logger)
+    @smtp_server.start
 
-    # One EventMachine loop...
-    EventMachine.run do
-      # Set up an SMTP server to run within EventMachine
-      rescue_port options[:smtp_port] do
-        EventMachine.start_server options[:smtp_ip], options[:smtp_port], Smtp
-        puts "==> #{smtp_url}"
-      end
+    # Start up an HTTP server
+    @http_server = MailCatcher::HTTP.new(host: options[:http_ip], port: options[:http_port], logger: logger)
+    @http_server.start
 
-      # Let Thin set itself up inside our EventMachine loop
-      # (Skinny/WebSockets just works on the inside)
-      rescue_port options[:http_port] do
-        Thin::Server.start(options[:http_ip], options[:http_port], Web)
-        puts "==> #{http_url}"
-      end
+    # Set up some signal traps to gracefully quit
+    #Signal.trap("INT") { quit! }
+    #Signal.trap("TERM") { quit! }
 
-      # Open the web browser before detatching console
-      if options[:browse]
-        EventMachine.next_tick do
-          browse http_url
-        end
-      end
+    # Tell her about it
+    puts "==> #{smtp_url}"
+    puts "==> #{http_url}"
 
-      # Daemonize, if we should, but only after the servers have started.
-      if options[:daemon]
-        EventMachine.next_tick do
-          if quittable?
-            puts "*** MailCatcher runs as a daemon by default. Go to the web interface to quit."
-          else
-            puts "*** MailCatcher is now running as a daemon that cannot be quit."
-          end
-          Process.daemon
-        end
-      end
+    # Open a browser if we were asked to
+    if options[:browse]
+      browse http_url
     end
+
+    # Daemonize, if we should, but only after the servers have started.
+    if options[:daemon]
+      if quittable?
+        puts "*** MailCatcher runs as a daemon by default. Go to the web interface to quit."
+      else
+        puts "*** MailCatcher is now running as a daemon that cannot be quit."
+      end
+
+      Process.daemon
+    end
+
+    # Now wait for shutdown
+    @smtp_server.join
+    @http_server.join
+
+    logger.info "Bye! 👋"
   end
 
   def quit!
-    EventMachine.next_tick { EventMachine.stop_event_loop }
+    unless quitting?
+      @smtp_server.stop
+      @http_server.stop
+
+      @quitting = true
+    end
+  end
+
+  def quitting?
+    !!@quitting
   end
 
 protected

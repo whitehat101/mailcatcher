@@ -23,20 +23,13 @@ Gem::Specification.new do |s|
     "lib/**/*.rb",
     "public/**/*",
     "views/**/*",
+    "vendor/gems/*/lib/**/*.rb",
   ] - Dir["lib/mail_catcher/web/assets.rb"]
   s.require_paths = ["lib"]
   s.executables = ["mailcatcher", "catchmail"]
   s.extra_rdoc_files = ["README.md", "LICENSE"]
 
   s.required_ruby_version = ">= 1.9.3"
-
-  s.add_dependency "eventmachine", "1.0.9.1"
-  s.add_dependency "mail", "~> 2.3"
-  s.add_dependency "rack", "~> 1.5"
-  s.add_dependency "sinatra", "~> 1.2"
-  s.add_dependency "sqlite3", "~> 1.3"
-  s.add_dependency "thin", "~> 1.5.0"
-  s.add_dependency "skinny", "~> 0.2.3"
 
   s.add_development_dependency "coffee-script"
   s.add_development_dependency "compass"

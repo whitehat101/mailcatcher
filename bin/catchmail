@@ -1,15 +1,13 @@
 #!/usr/bin/env ruby
 
-begin
-  require 'mail'
-rescue LoadError
-  require 'rubygems'
-  require 'mail'
-end
+# Make sure we can require vendored gems
+$:.unshift(*Dir.glob(File.expand_path("../../vendor/gems/*/lib", __FILE__)))
 
-require 'optparse'
+require "optparse"
 
-options = {:smtp_ip => '127.0.0.1', :smtp_port => 1025}
+require "mail"
+
+options = {:smtp_ip => "127.0.0.1", :smtp_port => 1025}
 
 OptionParser.new do |parser|
   parser.banner = <<-BANNER.gsub /^ +/, ""
@@ -17,34 +15,34 @@ OptionParser.new do |parser|
     sendmail-like interface to forward mail to MailCatcher.
   BANNER
 
-  parser.on('--ip IP') do |ip|
+  parser.on("--ip IP") do |ip|
     options[:smtp_ip] = ip
   end
 
-  parser.on('--smtp-ip IP', 'Set the ip address of the smtp server') do |ip|
+  parser.on("--smtp-ip IP", "Set the ip address of the smtp server") do |ip|
     options[:smtp_ip] = ip
   end
 
-  parser.on('--smtp-port PORT', Integer, 'Set the port of the smtp server') do |port|
+  parser.on("--smtp-port PORT", Integer, "Set the port of the smtp server") do |port|
     options[:smtp_port] = port
   end
 
-  parser.on('-f FROM', 'Set the sending address') do |from|
+  parser.on("-f FROM", "Set the sending address") do |from|
     options[:from] = from
   end
 
-  parser.on('-oi', 'Ignored option -oi') do |ignored|
+  parser.on("-oi", "Ignored option -oi") do |ignored|
   end
-  parser.on('-t', 'Ignored option -t') do |ignored|
+  parser.on("-t", "Ignored option -t") do |ignored|
   end
-  parser.on('-q', 'Ignored option -q') do |ignored|
+  parser.on("-q", "Ignored option -q") do |ignored|
   end
 
-  parser.on('-x', '--no-exit', 'Can\'t exit from the application') do
+  parser.on("-x", "--no-exit", "Can't exit from the application") do
     options[:no_exit] = true
   end
 
-  parser.on('-h', '--help', 'Display this help information') do
+  parser.on("-h", "--help", "Display this help information") do
     puts parser
     exit!
   end

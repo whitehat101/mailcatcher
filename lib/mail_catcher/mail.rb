@@ -1,4 +1,3 @@
-require "eventmachine"
 require "json"
 require "mail"
 require "sqlite3"
@@ -37,11 +36,11 @@ module MailCatcher::Mail extend self
     end
   end
 
-  def add_message(message)
+  def add_message(from:, to:, data:)
     @add_message_query ||= db.prepare("INSERT INTO message (sender, recipients, subject, source, type, size, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))")
 
-    mail = Mail.new(message[:source])
-    @add_message_query.execute(message[:sender], JSON.generate(message[:recipients]), mail.subject, message[:source], mail.mime_type || "text/plain", message[:source].length)
+    mail = Mail.new(data)
+    @add_message_query.execute(from, JSON.generate(to), mail.subject, data, mail.mime_type || "text/plain", data.length)
     message_id = db.last_insert_row_id
     parts = mail.all_parts
     parts = [mail] if parts.empty?
@@ -50,11 +49,6 @@ module MailCatcher::Mail extend self
       # Only parts have CIDs, not mail
       cid = part.cid if part.respond_to? :cid
       add_message_part(message_id, cid, part.mime_type || "text/plain", part.attachment? ? 1 : 0, part.filename, part.charset, body, body.length)
-    end
-
-    EventMachine.next_tick do
-      message = MailCatcher::Mail.message message_id
-      MailCatcher::Events::MessageAdded.push message
     end
   end
 

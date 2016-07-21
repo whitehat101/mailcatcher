@@ -1,0 +1,36 @@
+[submodule "vendor/gems/net-http-server"]
+	path = vendor/gems/net-http-server
+	url = git://github.com/postmodern/net-http-server.git
+[submodule "vendor/gems/parslet"]
+	path = vendor/gems/parslet
+	url = git://github.com/kschiess/parslet.git
+[submodule "vendor/gems/gserver"]
+	path = vendor/gems/gserver
+	url = git://github.com/ruby/gserver.git
+[submodule "vendor/gems/mail"]
+	path = vendor/gems/mail
+	url = git://github.com/mikel/mail.git
+[submodule "vendor/gems/sinatra"]
+	path = vendor/gems/sinatra
+	url = git://github.com/sinatra/sinatra.git
+[submodule "vendor/gems/rack"]
+	path = vendor/gems/rack
+	url = git://github.com/rack/rack.git
+[submodule "vendor/gems/websocket-ruby"]
+	path = vendor/gems/websocket-ruby
+	url = git://github.com/imanel/websocket-ruby.git
+[submodule "vendor/gems/midi-smtp-server"]
+	path = vendor/gems/midi-smtp-server
+	url = git://github.com/4commerce-technologies-AG/midi-smtp-server.git
+[submodule "vendor/gems/mime-types"]
+	path = vendor/gems/mime-types
+	url = git://github.com/mime-types/ruby-mime-types.git
+[submodule "vendor/gems/mime-types-data"]
+	path = vendor/gems/mime-types-data
+	url = git://github.com/mime-types/mime-types-data.git
+[submodule "vendor/gems/rack-protection"]
+	path = vendor/gems/rack-protection
+	url = git://github.com/sinatra/rack-protection.git
+[submodule "vendor/gems/tilt"]
+	path = vendor/gems/tilt
+	url = git://github.com/rtomayko/tilt.git

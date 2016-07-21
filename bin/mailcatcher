@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
-require 'mail_catcher'
+# Make sure we can require vendored gems
+$:.unshift(*Dir.glob(File.expand_path("../../vendor/gems/*/lib", __FILE__)))
+
+require "mail_catcher"
 
 MailCatcher.run!

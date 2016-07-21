@@ -1,61 +1,32 @@
-require "eventmachine"
+require "mail"
+require "midi-smtp-server"
 
 require "mail_catcher/mail"
 
-class MailCatcher::Smtp < EventMachine::Protocols::SmtpServer
-  # We override EM's mail from processing to allow multiple mail-from commands
-  # per [RFC 2821](http://tools.ietf.org/html/rfc2821#section-4.1.1.2)
-  def process_mail_from sender
-    if @state.include? :mail_from
-      @state -= [:mail_from, :rcpt, :data]
-      receive_reset
-    end
+class MailCatcher::SMTP < MidiSmtpServer::Smtpd
+  public :start
 
-    super
+  def initialize(host:, port:, logger: nil, **options)
+    super(port, host, 256, do_dns_reverse_lookup: false, logger: logger)
   end
 
-  def current_message
-    @current_message ||= {}
-  end
+  def on_message_data_event(envelope:, message:, **context)
+    MailCatcher::Mail.add_message(from: envelope[:from], to: envelope[:to], data: message[:data])
 
-  def receive_reset
-    @current_message = nil
-    true
-  end
-
-  def receive_sender(sender)
-    current_message[:sender] = sender
-    true
-  end
-
-  def receive_recipient(recipient)
-    current_message[:recipients] ||= []
-    current_message[:recipients] << recipient
-    true
-  end
-
-  def receive_data_chunk(lines)
-    current_message[:source] ||= ""
-    lines.each do |line|
-      current_message[:source] << line << "\r\n"
-    end
-    true
-  end
-
-  def receive_message
-    MailCatcher::Mail.add_message current_message
-    puts "==> SMTP: Received message from '#{current_message[:sender]}' (#{current_message[:source].length} bytes)"
-    true
+    puts "==> SMTP: Received message from '#{envelope[:from]}' (#{message[:data].bytesize} bytes)"
   rescue
-    puts "*** Error receiving message: #{current_message.inspect}"
+    puts "*** Error receiving message"
+    puts "    MailCatcher v#{MailCatcher::VERSION}"
+    puts "    From: #{envelope[:from].inspect}"
+    puts "    To: #{envelope[:to].inspect}"
+    puts "    Data: #{message[:data].inspect}"
     puts "    Exception: #{$!}"
     puts "    Backtrace:"
     $!.backtrace.each do |line|
       puts "       #{line}"
     end
     puts "    Please submit this as an issue at http://github.com/sj26/mailcatcher/issues"
-    false
-  ensure
-    @current_message = nil
+
+    raise MidiSmtpServer::Smtpd451Exception.new("Error receiving message, see MailCatcher log for details")
   end
 end
